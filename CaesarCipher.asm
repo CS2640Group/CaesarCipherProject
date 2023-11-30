@@ -3,91 +3,140 @@
 # Description: The Caesar cipher is a encrpytion technique (more specifically a substitution cipher)
 # it takes a "shift" or "key" and then moves each letter with a fixed number of positions down the alphabet
 
+# MACROS #
+.macro print(%str)
+	li $v0, 4
+	la $a0, %str
+	syscall
+.end_macro
 
+.macro inputStr(%buffer, %size, %destination)
+	li $v0, 8
+	la $a0, %buffer
+	li $a1, %size
+	move %destination, $a0
+	syscall
+.end_macro
+
+.macro inputInt(%destination)
+	li $v0, 5
+	syscall
+	move %destination, $v0
+.end_macro 
+
+# DATA #
 .data
-promptMode: .asciiz "\n================================================\n Caesar Cipher\n Please choose one of the following modes:\n Encryption (0)\n Decryption (1)\n================================================\n"
-promptPlain: .asciiz "\nPlease enter your plain text (in lowercase, max 500 chars): "
-plainString: .space 500
-promptCipher: .asciiz "\nPlease enter your cipher text (in uppercase, max 500 chars): "
-cipherString: .space 500
-promptShift: .asciiz "Please enter your shift: "
-modeError: .asciiz "\nThere was an error in your input. Please choose 1 or 2."
+promptMode: .asciiz "\n================================================\n Caesar Cipher\n Please choose one of the following modes:\n Encryption (0)\n Decryption (1)\n Exit (2)\n================================================\n"
+promptCarrot: .asciiz "> "
+promptPlain: .asciiz "\nPlease enter your plain text (max 500 chars): "
+plainString: .space 501
+promptCipher: .asciiz "\nPlease enter your cipher text (max 500 chars): "
+cipherString: .space 501
+promptShift: .asciiz "Please enter your shift (integer value): "
+modeError: .asciiz "\nThere was an error in your input. Please choose 1, 2, or 3."
+modeExit: .ascii "\nGoodbye :)"
 
-#can change amount of chars/newline spacing later if we want
-
+# TEXT #
 .text
 main:
 	#display mode prompt
-	li $v0, 4
-	la $a0, promptMode
-	syscall
+	print(promptMode)
 	
 	#store if user inputs 0 or 1
-	li $v0, 5
+	#method = char input: avoids string input, can branch according to ASCII nums
+	print(promptCarrot)
+	li $v0, 12
 	syscall
 	move $t0, $v0
 	
 	#error handling (if user doesn't choose 0 or 1)
-	beq $t0, 0, plainText
-	beq $t0, 1, cipherText
-	blt $t0, 0, errorMode
-	bge $t0, 2, errorMode
+	beq $t0, 48, plainText   # ASCII 48 = 0
+	beq $t0, 49, cipherText  # ASCII 49 = 1
+	beq $t0, 50, exit		 # ...
+	ble $t0, 47, errorMode
+	bge $t0, 51, errorMode
 	
 errorMode:
 	#prompts error handling msg and sends back to main
-	li $v0, 4
-	la $a0, modeError 
-	syscall
+	print(modeError)
 	
 	j main
 	
 plainText:
 	#display plain prompt
-	li $v0, 4
-	la $a0, promptPlain
-	syscall
-	
+	print(promptPlain)
+
 	#takes string input
-	li $v0, 8
-	la $a0, plainString
-	li $a1, 99
-	move $s0, $a0
-	syscall
+	inputStr(plainString, 500, $s0)
 	
 	j shift
 	
 cipherText:
 	#display cipher prompt
-	li $v0, 4
-	la $a0, promptCipher
-	syscall
+	print(promptCipher)
 	
 	#takes string input
-	li $v0, 8
-	la $a0, cipherString
-	li $a1, 99
-	move $s1, $a0
-	syscall
+	inputStr(cipherString, 500, $s0)
 	
 	j shift
 	
 shift:
 	#display shift prompt
-	li $v0, 4
-	la $a0, promptShift
-	syscall
+	print(promptShift)
 	
 	#stores shift/key amount
-	li $v0, 5
-	syscall
-	move $s2, $v0
+	inputInt($s1)
 	
-	# this is where jump would happen, example code but you can change
-	# beq $t0, 0, toUpper
-	# beq $t0, 1, toLower
+	#init loop counter
+	li $t1, 0
 	
+	#this is where jump would happen, example code but you can change
+	beq $t0, 0, positiveShiftLoop
+	beq $t0, 1, negativeShiftLoop
+	
+positiveShiftLoop:
+	#code for positive shift to $s0 (dencrypted text)
+	
+	#get character by loading the byte (into $t2)
+	lb $t2, 0($s0)
+	
+	#exit if the byte is exit ASCII (10 / LF / NL)
+	beq $t2, 10, exit # ALAN you may wanna change this to jump to a costum output
+				   	  # meant for decrypted -> encrypted text
+	
+	#perform POSITIVE shift on $t2
+	#because $t2 is a pointer to the byte in $s0,
+	#alterations to $t2 alters $s0
+	
+	#move to next character
+	addi $s0, $s0, 1
+	
+	#loop
+	j positiveShiftLoop
+
+negativeShiftLoop:
+	# code for negative shift to $s0 (encrypted text)
+	
+	#get character by loading the byte (into $t2)
+	lb $t2, 0($s0)
+	
+	#exit if the byte is exit ASCII (10 / LF / NL)
+	beq $t2, 10, exit # ALAN you may wanna change this to jump to a costum output
+				   	  # meant for encrypted -> decrypted text
+	
+	#perform NEGATIVE shift on $t2
+	#because $t2 is a pointer to the byte in $s0,
+	#alterations to $t2 alters $s0
+	
+	#move to next character
+	addi $s0, $s0, 1
+	
+	#loop
+	j negativeShiftLoop
+
 exit:
 	#exit function
+	print(modeExit)
 	li $v0, 10
 	syscall
 	
