@@ -24,6 +24,20 @@
 	move %destination, $v0
 .end_macro 
 
+.macro getStart(%char, %destination)
+	li $t9, 90 #ASCII value of 'Z'
+	ble %char, $t9, lowercase # check if char is uppercase
+
+	li %destination, 65 #set to uppercase letter
+	j end_macro
+	
+	lowercase:
+		li %destination, 97 #set to lowercase letter
+		j end_macro
+		
+	end_macro:
+.end_macro 
+
 # DATA #
 .data
 promptMode: .asciiz "\n================================================\n Caesar Cipher\n Please choose one of the following modes:\n Encryption (0)\n Decryption (1)\n Exit (2)\n================================================\n"
@@ -107,6 +121,7 @@ positiveShiftLoop:
 	#perform POSITIVE shift on $t2
 	#because $t2 is a pointer to the byte in $s0,
 	#alterations to $t2 alters $s0
+	getStart($t2, $s2) #stores starting point in $s2
 	
 	#move to next character
 	addi $s0, $s0, 1
@@ -127,6 +142,7 @@ negativeShiftLoop:
 	#perform NEGATIVE shift on $t2
 	#because $t2 is a pointer to the byte in $s0,
 	#alterations to $t2 alters $s0
+	getStart($t2, $s2) #stores starting point in $s2
 	
 	#move to next character
 	addi $s0, $s0, 1
