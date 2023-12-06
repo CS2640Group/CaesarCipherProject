@@ -3,7 +3,7 @@
 # Description: The Caesar cipher is a encrpytion technique (more specifically a substitution cipher)
 # it takes a "shift" or "key" and then moves each letter with a fixed number of positions down the alphabet
 
-# MACROS #
+# MACROS
 .macro print(%str)
 	li $v0, 4
 	la $a0, %str
@@ -26,7 +26,7 @@
 
 .macro getStart(%char, %destination)
 	li $t9, 90 #ASCII value of 'Z'
-	ble %char, $t9, lowercase # check if char is uppercase
+	bgt %char, $t9, lowercase # check if char is uppercase
 
 	li %destination, 65 #set to uppercase letter
 	j end_macro
@@ -47,7 +47,7 @@ plainString: .space 501
 promptCipher: .asciiz "\nPlease enter your cipher text (max 500 chars): "
 cipherString: .space 501
 promptShift: .asciiz "Please enter your shift (integer value): "
-modeError: .asciiz "\nThere was an error in your input. Please choose 1, 2, or 3."
+modeError: .asciiz "\nThere was an error in your input. Please choose 0, 1, or 2."
 modeExit: .ascii "\nGoodbye :)"
 
 # TEXT #
@@ -105,8 +105,8 @@ shift:
 	li $t1, 0
 	
 	#this is where jump would happen, example code but you can change
-	beq $t0, 0, positiveShiftLoop
-	beq $t0, 1, negativeShiftLoop
+	beq $t0, 48, positiveShiftLoop
+	beq $t0, 49, negativeShiftLoop
 	
 positiveShiftLoop:
 	#code for positive shift to $s0 (dencrypted text)
@@ -122,6 +122,15 @@ positiveShiftLoop:
 	#because $t2 is a pointer to the byte in $s0,
 	#alterations to $t2 alters $s0
 	getStart($t2, $s2) #stores starting point in $s2
+	
+	# Arithmetic for encryption
+	add $t2, $t2, $s1			# Add current char value (stored in $t2) with shift value (stored in $s1)
+	sub $t2, $t2, $s2			# Subtract shifted value (stored in $t2) by $s2 (upper/lower starting value)
+	div $t2, $t2, 26			# Divide by 26 (num of letters in alphabet)
+	mfhi $t2					# Remainder stored in $HI, move remainder to $t2
+	add $t2, $t2, $s2			# Add $t2 by $2 (upper/lower starting value)
+	
+	sb $t2, 0($s0)
 	
 	#move to next character
 	addi $s0, $s0, 1
@@ -144,6 +153,15 @@ negativeShiftLoop:
 	#alterations to $t2 alters $s0
 	getStart($t2, $s2) #stores starting point in $s2
 	
+	# Arithmetic for decryption
+	sub $t2, $t2, $s1			# Subtract current encrypted value (stored in $t2) with shift value (stored in $s1)
+	sub $t2, $t2, $s2			# Subtract decrypted value (stored in $t2) by $s2 (upper/lower starting value)
+	div $t2, $t2, 26			# Divide by 26 (num of letters in alphabet)
+	mfhi $t2					# Remainder stored in $HI, move remainder to $t2
+	add $t2, $t2, $s2			# Add $t2 by $s2 (upper/lower starting value)
+	
+	sb $t2, 0($s0)
+	
 	#move to next character
 	addi $s0, $s0, 1
 	
@@ -152,7 +170,7 @@ negativeShiftLoop:
 
 exit:
 	#exit function
+	print(cipherString)
 	print(modeExit)
 	li $v0, 10
 	syscall
-	
