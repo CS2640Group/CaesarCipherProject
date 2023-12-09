@@ -58,16 +58,16 @@ main:
     #display mode prompt
     print(promptMode)
     
-    #store if user inputs 0 or 1
+    #store if user inputs 0, 1, or 2
     print(promptCarrot)
     li $v0, 12
     syscall
     move $t0, $v0
     
-    #error handling (if user doesn't choose 0 or 1)
+    #error handling (if user doesn't choose 0, 1, or 2)
     beq $t0, 48, plainText   # ASCII 48 = 0
     beq $t0, 49, cipherText  # ASCII 49 = 1
-    beq $t0, 50, exit        # ...
+    beq $t0, 50, exit        # ASCII 50 = 2
     ble $t0, 47, errorMode
     bge $t0, 51, errorMode
     
@@ -105,7 +105,7 @@ shift:
     #init loop counter
     li $t1, 0
     
-    #this is where jump would happen, example code but you can change
+    #jumps to postiveShiftLoop (for encryption) or negativeShiftLoop (for decryption)
     beq $t0, 48, positiveShiftLoop
     beq $t0, 49, negativeShiftLoop
     
@@ -139,8 +139,11 @@ positiveShiftLoop:
 printEncrypted:
     # Print the encrypted message prompt
     print(encryptedMsg)
+    
     # Print the encrypted text
     print(plainString)
+    
+    #reprompt user back to main menu
     j main
 
 negativeShiftLoop:
@@ -173,8 +176,11 @@ negativeShiftLoop:
 printDecrypted:
     # Print the decrypted message prompt
     print(decryptedMsg)
+    
     # Print the decrypted text
     print(cipherString)
+    
+    #reprompt user back to main menu
     j main
 
 exit:
