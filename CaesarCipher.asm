@@ -141,7 +141,7 @@ printEncrypted:
     print(encryptedMsg)
     # Print the encrypted text
     print(plainString)
-    j exit
+    j main
 
 negativeShiftLoop:
     # code for negative shift to $s0 (encrypted text)
@@ -175,7 +175,7 @@ printDecrypted:
     print(decryptedMsg)
     # Print the decrypted text
     print(cipherString)
-    j exit
+    j main
 
 exit:
     #exit function
